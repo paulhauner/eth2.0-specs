@@ -371,8 +371,12 @@ def on_block(store: Store, signed_block: SignedBeaconBlock) -> None:
     # Update finalized checkpoint
     if state.finalized_checkpoint.epoch > store.finalized_checkpoint.epoch:
         store.finalized_checkpoint = state.finalized_checkpoint
+        
+        # Return early if justified checkpoint has been updated (optimization to reduce calls to get_ancestor)
+        if store.justified_checkpoint == state.current_justified_checkpoint:
+            return
+        
         finalized_slot = compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)
-
         # Update justified if new justified is later than store justified
         # or if store justified is not in chain with finalized checkpoint
         if (
